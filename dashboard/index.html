@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PayeeShield Live Demo</title>
+<meta name="description" content="PayeeShield scores UPI payments on the receiving side, before the payer confirms. Offline demo with simulated transactions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #EDEFEA;
+  --surface: #F7F8F5;
+  --sunk: #E2E5DF;
+  --ink: #18323F;
+  --ink-2: #4A5F69;
+  --ink-3: #7A8B92;
+  --rule: #C9D0CB;
+  --accent: #5E4FA2;
+  --accent-soft: #E4E0F2;
+  --allow: #2E7A4E;
+  --allow-soft: #DCEEE2;
+  --warn: #A86A12;
+  --warn-soft: #F6E8CF;
+  --block: #B3262D;
+  --block-soft: #F6DADB;
+  --bar-track: #D7DCD6;
+  --shadow: 0 1px 0 rgba(24,50,63,.06), 0 8px 24px -12px rgba(24,50,63,.25);
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-c: "IBM Plex Sans Condensed", "IBM Plex Sans", "Arial Narrow", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0F1A21; --surface: #16242C; --sunk: #0B151B; --ink: #E3EAEC; --ink-2: #A9B8BE; --ink-3: #74868D;
+    --rule: #2A3B44; --accent: #A99BE8; --accent-soft: #2B2747; --allow: #5BC487; --allow-soft: #173326;
+    --warn: #E6A847; --warn-soft: #3A2C14; --block: #F06A6F; --block-soft: #3F1C1F; --bar-track: #263740;
+    --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 30px -12px rgba(0,0,0,.6); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0F1A21; --surface: #16242C; --sunk: #0B151B; --ink: #E3EAEC; --ink-2: #A9B8BE; --ink-3: #74868D;
+  --rule: #2A3B44; --accent: #A99BE8; --accent-soft: #2B2747; --allow: #5BC487; --allow-soft: #173326;
+  --warn: #E6A847; --warn-soft: #3A2C14; --block: #F06A6F; --block-soft: #3F1C1F; --bar-track: #263740;
+  --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 30px -12px rgba(0,0,0,.6); color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--font); font-size: 16px; line-height: 1.5;
+  font-variant-numeric: tabular-nums; overflow-x: hidden;
+}
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 720px) { .wrap { padding: 0 28px; } }
+
+/* Header */
+header.top { border-bottom: 1px solid var(--rule); position: relative; overflow: hidden; }
+.top .wrap { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px; padding-top: 28px; padding-bottom: 24px; }
+.brand h1 { margin: 0; font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: 1; font-weight: 700; letter-spacing: -.035em; }
+.brand h1 .shield { color: var(--accent); }
+.brand p.tag { margin: .55rem 0 0; font-size: clamp(1.05rem, 2.6vw, 1.3rem); color: var(--ink-2); max-width: 32ch; line-height: 1.35; }
+.brand p.credit { margin: .9rem 0 0; font-size: .82rem; color: var(--ink-3); }
+.rosette { width: clamp(96px, 22vw, 190px); height: auto; color: var(--accent); }
+.rosette path { fill: none; stroke: currentColor; stroke-width: .55; opacity: .55; }
+.rosette path.r2 { opacity: .35; }
+.rosette path.r3 { opacity: .8; stroke-width: .7; }
+@media (prefers-reduced-motion: no-preference) {
+  .rosette path { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 2.6s cubic-bezier(.4,.1,.2,1) forwards; }
+  .rosette path.r2 { animation-delay: .25s; } .rosette path.r3 { animation-delay: .5s; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+}
+
+/* Controls */
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 18px 0 6px; }
+.btn {
+  appearance: none; border: 1px solid var(--rule); background: var(--surface); padding: .6rem 1rem;
+  border-radius: 999px; cursor: pointer; font-weight: 500; font-size: .95rem; line-height: 1.2;
+  display: inline-flex; align-items: center; gap: .5rem; min-height: 44px;
+}
+.btn:hover { border-color: var(--ink-3); }
+.btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn.primary:hover { opacity: .9; }
+.live { display: inline-flex; align-items: center; gap: .45rem; color: var(--ink-2); font-size: .9rem; margin-left: auto; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--allow); }
+.paused .dot { background: var(--ink-3); }
+@media (prefers-reduced-motion: no-preference) { .live:not(.paused) .dot { animation: pulse 1.6s ease-in-out infinite; } @keyframes pulse { 50% { opacity: .3; } } }
+@media (max-width: 520px) { .live { margin-left: 0; width: 100%; } }
+
+/* KPI strip */
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 14px 0 22px; }
+.kpi { padding: 14px 16px 14px 0; }
+.kpi + .kpi { border-left: 1px solid var(--rule); padding-left: 16px; }
+.kpi .v { font-size: clamp(1.35rem, 3vw, 1.9rem); font-weight: 600; letter-spacing: -.02em; line-height: 1.15; display: block; }
+.kpi .l { font-size: .85rem; color: var(--ink-2); }
+.kpi .s { font-size: .78rem; color: var(--ink-3); display: block; }
+.kpi.block .v { color: var(--block); } .kpi.warn .v { color: var(--warn); } .kpi.saved .v { color: var(--accent); }
+@media (max-width: 860px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .kpi, .kpi + .kpi { border-left: 0; padding: 12px 12px 12px 0; border-bottom: 1px solid var(--rule); }
+  .kpi:nth-child(even) { border-left: 1px solid var(--rule); padding-left: 14px; }
+  .kpi.saved { grid-column: 1 / -1; border-bottom: 0; }
+  .kpi:nth-child(4) { border-bottom: 1px solid var(--rule); }
+}
+
+/* Main grid */
+.main { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; }
+@media (max-width: 920px) { .main { grid-template-columns: minmax(0, 1fr); } }
+h2 { font-size: 1.15rem; margin: 0; font-weight: 600; letter-spacing: -.01em; }
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.sec-head .hint { font-size: .85rem; color: var(--ink-3); }
+
+.feed-box { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; }
+.feed-cols, .row { display: grid; grid-template-columns: 4.6rem 6.8rem minmax(0, 1fr) 8.5rem 4.9rem; gap: 12px; align-items: center; padding: 0 14px; }
+.feed-cols { font-size: .78rem; color: var(--ink-3); padding-top: 9px; padding-bottom: 9px; border-bottom: 1px solid var(--rule); background: var(--sunk); }
+.feed-cols span:nth-child(2) { text-align: right; }
+.feed { height: 520px; overflow-y: auto; overscroll-behavior: contain; }
+.row { font-family: var(--font-c); min-height: 46px; border-bottom: 1px solid var(--rule); cursor: pointer; font-size: .95rem; position: relative; }
+.row:hover { background: var(--sunk); }
+.row.sel { background: var(--accent-soft); }
+.row.sel::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+.row .t { color: var(--ink-3); font-size: .85rem; }
+.row .amt { text-align: right; font-weight: 600; }
+.row .payee { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.row .payee b { font-weight: 500; color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .row.new { animation: arrive .6s ease-out; }
+  @keyframes arrive { from { background: var(--accent-soft); } }
+}
+.score { display: flex; align-items: center; gap: 8px; }
+.score .n { width: 1.8rem; text-align: right; font-weight: 600; font-size: .9rem; }
+.bar { position: relative; flex: 1; height: 6px; background: var(--bar-track); border-radius: 3px; overflow: visible; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; }
+.bar .tick { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ink-3); opacity: .55; }
+.lv-ALLOW .bar i { background: var(--allow); } .lv-WARN .bar i { background: var(--warn); } .lv-BLOCK .bar i { background: var(--block); }
+.chip { display: inline-flex; justify-content: center; font-family: var(--font); font-size: .75rem; font-weight: 600; letter-spacing: .03em; padding: .22rem .5rem; border-radius: 6px; line-height: 1.2; }
+.chip.ALLOW { color: var(--allow); background: var(--allow-soft); }
+.chip.WARN { color: var(--warn); background: var(--warn-soft); }
+.chip.BLOCK { color: var(--paper); background: var(--block); }
+@media (max-width: 600px) {
+  .feed-cols { display: none; }
+  .row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "amt chip" "payee payee" "score score"; gap: 4px 10px; padding-top: 10px; padding-bottom: 10px; }
+  .row .t { display: none; }
+  .row .amt { grid-area: amt; text-align: left; font-size: 1.05rem; }
+  .row .payee { grid-area: payee; }
+  .row .score { grid-area: score; }
+  .row .chip { grid-area: chip; }
+  .feed { height: 440px; }
+}
+
+/* Detail panel */
+.detail { position: sticky; top: 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+@media (max-width: 920px) { .detail { position: static; } }
+.detail .empty { color: var(--ink-2); margin: 0; }
+.d-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.d-amt { font-size: 1.9rem; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+.d-to { color: var(--ink-2); font-size: .92rem; margin-top: 2px; word-break: break-all; }
+.d-score { text-align: right; }
+.d-score .big { font-size: 2.2rem; font-weight: 700; line-height: 1; letter-spacing: -.03em; }
+.d-score .of { font-size: .8rem; color: var(--ink-3); display: block; margin-bottom: 6px; }
+.d-score.lv-ALLOW .big { color: var(--allow); } .d-score.lv-WARN .big { color: var(--warn); } .d-score.lv-BLOCK .big { color: var(--block); }
+.gauge { margin: 16px 0 4px; }
+.gauge .bar { height: 8px; }
+.gauge .marks { position: relative; height: 18px; font-size: .72rem; color: var(--ink-3); }
+.gauge .marks span { position: absolute; top: 3px; transform: translateX(-50%); }
+.d-sub { font-size: .92rem; font-weight: 600; margin: 18px 0 8px; }
+ul.reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+ul.reasons li { padding: 8px 10px 8px 12px; border-left: 3px solid var(--block); background: var(--block-soft); border-radius: 0 8px 8px 0; font-size: .93rem; line-height: 1.4; }
+ul.reasons li.minor { border-left-color: var(--ink-3); background: var(--sunk); color: var(--ink-2); }
+ul.reasons li.none { border-left-color: var(--allow); background: var(--allow-soft); }
+table.sig { width: 100%; border-collapse: collapse; font-size: .88rem; }
+table.sig td { padding: 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.sig td:nth-child(2) { text-align: right; font-weight: 500; white-space: nowrap; padding-left: 8px; }
+table.sig td:nth-child(3) { text-align: right; width: 3.6rem; color: var(--ink-3); font-size: .8rem; padding-left: 8px; white-space: nowrap; }
+table.sig tr.hot td:nth-child(2) { color: var(--block); }
+table.sig tr.hot td:nth-child(3) { color: var(--block); font-weight: 600; }
+.d-foot { margin-top: 12px; font-size: .8rem; color: var(--ink-3); }
+.d-actions { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+.d-actions .btn { font-size: .85rem; padding: .45rem .85rem; min-height: 38px; }
+.truth { font-size: .8rem; padding: .15rem .45rem; border-radius: 5px; border: 1px solid var(--rule); color: var(--ink-2); }
+
+/* What-if */
+.whatif { margin: 36px 0 24px; border-top: 1px solid var(--rule); padding-top: 22px; }
+.whatif > p { margin: 4px 0 16px; color: var(--ink-2); max-width: 64ch; }
+.presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.presets .btn { font-size: .85rem; padding: .4rem .85rem; min-height: 38px; }
+.wi-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; }
+@media (max-width: 920px) { .wi-grid { grid-template-columns: minmax(0, 1fr); } }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 24px; }
+@media (max-width: 600px) { .fields { grid-template-columns: minmax(0, 1fr); } }
+.f { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.f label, .f .lab { display: flex; justify-content: space-between; gap: 8px; font-size: .92rem; }
+.f output { font-weight: 600; white-space: nowrap; }
+.f input[type=range] { width: 100%; margin: 8px 0 0; accent-color: var(--accent); }
+.f input[type=number] { width: 9rem; padding: .35rem .5rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); text-align: right; }
+.f.toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.switch { position: relative; width: 46px; height: 26px; flex: none; }
+.switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+.switch span { position: absolute; inset: 0; background: var(--bar-track); border-radius: 13px; transition: background .15s; }
+.switch span::after { content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
+.switch input:checked + span { background: var(--accent); }
+.switch input:checked + span::after { transform: translateX(20px); }
+.switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wi-out { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; position: sticky; top: 16px; }
+@media (max-width: 920px) { .wi-out { position: static; } }
+
+footer { border-top: 1px solid var(--rule); margin-top: 28px; padding: 18px 0 40px; color: var(--ink-3); font-size: .85rem; }
+footer p { margin: .3rem 0; max-width: 80ch; }
+
+/* Phone modal */
+dialog.phone { border: 0; padding: 0; background: transparent; max-width: calc(100vw - 32px); max-height: calc(100dvh - 24px); overflow: visible; }
+dialog.phone::backdrop { background: rgba(10, 20, 26, .62); }
+.handset { width: 340px; max-width: 100%; background: #0E1418; border-radius: 40px; padding: 12px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.6); }
+.screen { background: #FFFFFF; color: #1B2328; border-radius: 30px; overflow: hidden; max-height: calc(100dvh - 48px); overflow-y: auto; }
+.statusbar { display: flex; justify-content: space-between; padding: 10px 22px 4px; font-size: .75rem; font-weight: 600; }
+.notch { width: 90px; height: 22px; background: #0E1418; border-radius: 0 0 14px 14px; margin: -10px auto 0; }
+.payhdr { padding: 12px 20px 14px; border-bottom: 1px solid #E6E9EB; font-size: .88rem; color: #56656D; }
+.payhdr b { color: #1B2328; display: block; font-size: 1.6rem; letter-spacing: -.02em; }
+.alert { padding: 18px 20px 6px; }
+.alert h3 { margin: 0 0 6px; font-size: 1.3rem; line-height: 1.25; color: #9E1F25; letter-spacing: -.01em; }
+.alert .why { margin: 0 0 12px; font-size: .9rem; color: #56656D; }
+.alert ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.alert li { font-size: .92rem; line-height: 1.4; padding-left: 22px; position: relative; }
+.alert li::before { content: ""; position: absolute; left: 4px; top: .5em; width: 8px; height: 8px; border-radius: 50%; background: #B3262D; }
+.alert .riskline { margin-top: 14px; font-size: .82rem; color: #56656D; }
+.ph-actions { padding: 16px 20px 22px; display: grid; gap: 10px; }
+.ph-actions button { min-height: 48px; border-radius: 14px; font-weight: 600; font-size: 1rem; cursor: pointer; border: 0; }
+.ph-cancel { background: #18323F; color: #fff; }
+.ph-pay { background: transparent; color: #56656D; border: 1px solid #D5DADD !important; }
+.ph-result { padding: 22px 20px 26px; font-size: .95rem; line-height: 1.5; }
+.ph-result h3 { margin: 0 0 8px; font-size: 1.2rem; }
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 10px; font-size: .9rem; max-width: calc(100vw - 32px); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10; }
+.toast.on { opacity: 1; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Payee<span class="shield">Shield</span></h1>
+      <p class="tag">Stop the payment before the money's gone.</p>
+      <p class="credit">Team ACHILLES, PSG iTech Coimbatore. IBM Z Datathon 2026.</p>
+    </div>
+    <svg class="rosette" id="rosette" viewBox="-50 -50 100 100" aria-hidden="true"></svg>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="controls">
+    <button class="btn primary" id="storyBtn" type="button">Try the ₹1 story</button>
+    <button class="btn" id="pauseBtn" type="button" aria-pressed="false">Pause stream</button>
+    <span class="live" id="live"><span class="dot"></span><span id="liveText">Live: simulated UPI traffic, scored in your browser</span></span>
+  </div>
+
+  <section class="kpis" aria-label="Session totals">
+    <div class="kpi"><span class="v" id="kTotal">0</span><span class="l">Transactions scored</span></div>
+    <div class="kpi block"><span class="v" id="kBlock">0</span><span class="l">Blocked</span></div>
+    <div class="kpi warn"><span class="v" id="kWarn">0</span><span class="l">Warned</span></div>
+    <div class="kpi"><span class="v" id="kLat">–</span><span class="l">Avg scoring time</span><span class="s">In-browser rules, not the model</span></div>
+    <div class="kpi saved"><span class="v" id="kSaved">₹0</span><span class="l">Protected from fraud</span><span class="s" id="kMissed">Fraud that got through: 0</span></div>
+  </section>
+
+  <div class="main">
+    <section aria-labelledby="feedTitle">
+      <div class="sec-head"><h2 id="feedTitle">Payments being scored</h2><span class="hint">Newest first. Select a row to see why.</span></div>
+      <div class="feed-box">
+        <div class="feed-cols" aria-hidden="true"><span>Time</span><span>Amount</span><span>Paying to</span><span>Risk</span><span>Decision</span></div>
+        <div class="feed" id="feed" role="list"></div>
+      </div>
+    </section>
+
+    <aside class="detail" id="detail" aria-live="polite">
+      <h2 style="margin-bottom:8px">Payment detail</h2>
+      <p class="empty">Select any payment in the feed to see each payee signal, how much it added to the score, and the reasons the payer would be shown.</p>
+    </aside>
+  </div>
+
+  <section class="whatif" aria-labelledby="wiTitle">
+    <h2 id="wiTitle">What if?</h2>
+    <p>Change the signals and watch the score move. Thresholds: warn at 40, block at 75.</p>
+    <div class="presets" id="presets"></div>
+    <div class="wi-grid">
+      <div class="fields" id="fields"></div>
+      <div class="wi-out" id="wiOut" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Everything on this page is simulated and runs offline in your browser. The scorer here is a transparent weighted rule model that mirrors PayeeShield's reason codes. The trained model is served by the Python API.</p>
+    <p>PayeeShield is designed to run inside the payment path on IBM Z / LinuxONE. This prototype has not yet been benchmarked on IBM Z.</p>
+  </footer>
+</main>
+
+<dialog class="phone" id="phone" aria-labelledby="phTitle">
+  <div class="handset"><div class="screen" id="phScreen"></div></div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<!-- ===================== Scoring engine (pure, no DOM) ===================== -->
+<script id="engine">
+var WARN_AT = 40, BLOCK_AT = 75;
+var FEATURES = ["amount", "hour", "payee_sim_reachable", "payee_sim_age_days", "payee_sim_changes_90d",
+  "payee_vpa_age_days", "payee_unique_senders_24h", "payee_outflow_minutes", "first_time_payee", "payer_on_call"];
+
+var INR = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+function rupees(x) { return "₹" + INR.format(Math.round(x)); }
+function plural(n, w) { n = Math.round(n); return n + " " + w + (n === 1 ? "" : "s"); }
+
+// Logit contributions. Each entry: signal label, contribution, and whether it is a "hot" signal.
+var BIAS = -4.5;
+function contributions(t) {
+  var first = t.first_time_payee === 1, unreach = t.payee_sim_reachable === 0, youngVpa = t.payee_vpa_age_days < 30;
+  var c = [];
+  c.push(["payee_sim_reachable", unreach ? 2.6 : 0]);
+  c.push(["payee_vpa_age_days", youngVpa ? 0.8 + 1.7 * (1 - t.payee_vpa_age_days / 30) : 0]);
+  c.push(["payee_sim_changes_90d", t.payee_sim_changes_90d >= 2 ? 1.5 + 0.4 * Math.min(t.payee_sim_changes_90d - 2, 3) : (t.payee_sim_changes_90d === 1 ? 0.3 : 0)]);
+  c.push(["payee_sim_age_days", t.payee_sim_age_days < 15 ? 1.5 : (t.payee_sim_age_days < 30 ? 0.6 : 0)]);
+  c.push(["payee_unique_senders_24h", t.payee_unique_senders_24h >= 15 && (youngVpa || unreach) ? 1.8 : 0]);
+  c.push(["payee_outflow_minutes", t.payee_outflow_minutes < 10 ? 1.6 : (t.payee_outflow_minutes < 60 ? 0.8 : 0)]);
+  c.push(["payer_on_call", t.payer_on_call === 1 && first ? 3.0 : 0]);
+  c.push(["amount", t.amount >= 10000 && first ? 0.9 : 0]);
+  c.push(["first_time_payee", first ? 0.5 : 0]);
+  c.push(["hour", t.hour >= 0 && t.hour <= 4 ? 0.3 : 0]);
+  return c;
+}
+
+function reasonCodes(t) {
+  var youngVpa = t.payee_vpa_age_days < 30, unreach = t.payee_sim_reachable === 0, first = t.first_time_payee === 1;
+  var rules = [
+    [100, unreach, "Payee's mobile number is unreachable on the telecom network"],
+    [95, t.payer_on_call === 1 && first, "You are on a call while paying a new payee — common in 'digital arrest' scams"],
+    [90, t.payee_unique_senders_24h >= 15 && (youngVpa || unreach), Math.round(t.payee_unique_senders_24h) + " different people paid this payee in 24h"],
+    [85, t.payee_outflow_minutes < 10, "Money leaves payee account within " + plural(t.payee_outflow_minutes, "minute")],
+    [80, youngVpa, "Payee UPI ID created " + plural(t.payee_vpa_age_days, "day") + " ago"],
+    [75, t.payee_sim_changes_90d >= 2, "Payee SIM changed " + Math.round(t.payee_sim_changes_90d) + " times in 90 days"],
+    [70, t.payee_sim_age_days < 15, "Payee SIM only " + plural(t.payee_sim_age_days, "day") + " old"],
+    [60, t.amount >= 10000 && first, "Large amount to a new payee"],
+    [10, first, "First payment to this payee"]
+  ];
+  return rules.filter(function (r) { return r[1]; }).sort(function (a, b) { return b[0] - a[0]; })
+    .map(function (r) { return { text: r[2], minor: r[0] <= 10 }; });
+}
+
+function decide(s) { return s >= BLOCK_AT ? "BLOCK" : s >= WARN_AT ? "WARN" : "ALLOW"; }
+
+function scoreTxn(t) {
+  var c = contributions(t), z = BIAS;
+  for (var i = 0; i < c.length; i++) z += c[i][1];
+  var risk = Math.max(0, Math.min(100, Math.round(100 / (1 + Math.exp(-z)))));
+  var decision = decide(risk);
+  // Mirror src/scorer.py: reasons only for WARN/BLOCK, so ALLOW never shows alarming text.
+  var reasons = decision === "ALLOW" ? [] : reasonCodes(t).slice(0, 4);
+  if (!reasons.length) reasons = decision === "ALLOW"
+    ? [{ text: "No risk signals found", minor: false, none: true }]
+    : [{ text: "Unusual payee behaviour pattern detected by the model", minor: false }];
+  return { risk_score: risk, decision: decision, reasons: reasons, contributions: c, logit: z };
+}
+
+// ---------- Synthetic stream generator (mirrors src/data_gen.py segments) ----------
+function makeRng(seed) { // mulberry32
+  var a = seed >>> 0;
+  return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function Gen(seed) {
+  var R = makeRng(seed || Date.now());
+  function u() { return R(); }
+  function int(a, b) { return a + Math.floor(u() * (b - a + 1)); }
+  function bern(p) { return u() < p ? 1 : 0; }
+  function normal() { var x = 0; for (var i = 0; i < 6; i++) x += u(); return (x - 3) / Math.sqrt(0.5); }
+  function lognorm(med, sig, lo, hi) { var v = Math.exp(Math.log(med) + sig * normal()); return Math.min(hi || 500000, Math.max(lo || 1, v)); }
+  function expo(mean) { return -Math.log(1 - u()) * mean; }
+  function pick(obj) { var r = u(), acc = 0, k; for (k in obj) { acc += obj[k]; if (r < acc) return k; } return k; }
+  function hour(lateBias) {
+    if (u() < lateBias) return [19, 20, 21, 22, 23, 0, 1, 2][int(0, 7)];
+    var w = [1, .6, .4, .3, .3, .5, 1.5, 3, 4, 5, 5, 5, 5, 5, 4.5, 4.5, 4.5, 5, 5.5, 5.5, 5, 4, 3, 2], s = 0, i;
+    for (i = 0; i < 24; i++) s += w[i]; var r = u() * s;
+    for (i = 0; i < 24; i++) { r -= w[i]; if (r <= 0) return i; } return 12;
+  }
+  function roundAmt(a) { return a < 1000 && u() < 0.5 ? Math.round(a / 10) * 10 : Math.round(a); }
+  var SHOPS = ["sharmastores", "annapoornatiffin", "kovaimedicals", "rajufruits", "sriramtextiles", "chaipoint", "murugantea", "greenmart", "lakshmibakery", "citycabs"];
+  var BANKS = ["okaxis", "oksbi", "okhdfcbank", "ybl", "paytm", "okicici", "ibl", "upi"];
+  function phoneVpa() { var p = ["98", "99", "97", "94", "63", "70", "81", "88", "90", "73"][int(0, 9)];
+    return { masked: p + "xxxxx" + String(int(100, 999)), bank: BANKS[int(0, BANKS.length - 1)] }; }
+  function shopVpa() { var s = SHOPS[int(0, SHOPS.length - 1)];
+    return { masked: s.slice(0, 2) + "••••" + s.slice(-2), bank: BANKS[int(0, BANKS.length - 1)] }; }
+
+  this.next = function () {
+    var fraud = u() < 0.05, sc, t = {}, v;
+    if (!fraud) {
+      sc = pick({ legit_p2p: 0.78, legit_merchant: 0.15, legit_new_shop: 0.07 });
+      var shop = sc !== "legit_p2p";
+      t.amount = roundAmt(lognorm(sc === "legit_merchant" ? 350 : 600, 1.1, 1, 200000));
+      t.hour = hour(0.15);
+      t.payee_sim_reachable = bern(0.98);
+      t.payee_sim_age_days = u() < 0.08 ? int(3, 90) : Math.round(expo(1100) + 30);
+      t.payee_sim_changes_90d = u() < 0.93 ? 0 : (u() < 0.85 ? 1 : 2);
+      t.payee_vpa_age_days = u() < (sc === "legit_new_shop" ? 0.6 : 0.10) ? int(1, 60) : Math.round(expo(900) + 10);
+      if (shop) {
+        t.payee_unique_senders_24h = Math.round(expo(sc === "legit_merchant" ? 40 : 12));
+        t.payee_outflow_minutes = +lognorm(90, 1.2, 1, 10000).toFixed(1);
+        t.first_time_payee = bern(sc === "legit_new_shop" ? 0.55 : 0.35);
+      } else {
+        t.payee_unique_senders_24h = int(0, 3);
+        t.payee_outflow_minutes = +lognorm(1500, 1.1, 1, 20000).toFixed(1);
+        t.first_time_payee = bern(0.12);
+      }
+      t.payer_on_call = bern(0.05);
+      v = shop ? shopVpa() : phoneVpa();
+    } else {
+      sc = pick({ dead_sim_mule: 0.35, digital_arrest: 0.15, fake_refund_qr: 0.30, sim_swap_mule: 0.20 });
+      t.hour = hour(0.30); t.payer_on_call = bern(0.10); t.first_time_payee = bern(0.80);
+      t.payee_sim_reachable = bern(0.90); t.payee_sim_age_days = Math.round(expo(450) + 5);
+      t.payee_sim_changes_90d = u() < 0.75 ? 0 : (u() < 0.8 ? 1 : 2);
+      t.payee_vpa_age_days = Math.round(expo(70) + 1);
+      t.payee_unique_senders_24h = Math.round(expo(6));
+      t.payee_outflow_minutes = +lognorm(120, 1.3, 1, 10000).toFixed(1);
+      t.amount = roundAmt(lognorm(1500, 1.0));
+      if (sc === "dead_sim_mule") {
+        t.payee_sim_reachable = bern(0.25); t.payee_unique_senders_24h = Math.round(expo(16) + 4);
+        t.payee_outflow_minutes = +lognorm(12, 1.2, 1, 5000).toFixed(1); t.payee_vpa_age_days = Math.round(expo(30) + 1);
+      } else if (sc === "digital_arrest") {
+        t.payer_on_call = bern(0.85); t.amount = roundAmt(lognorm(80000, 0.7, 20000, 500000));
+        t.first_time_payee = bern(0.95); t.payee_vpa_age_days = Math.round(expo(25) + 1); t.hour = hour(0.10);
+      } else if (sc === "fake_refund_qr") {
+        t.amount = roundAmt(lognorm(900, 0.9, 1, 25000)); t.payee_sim_reachable = bern(0.97);
+        t.payee_vpa_age_days = Math.round(expo(15) + 1); t.payee_unique_senders_24h = Math.round(expo(10) + 2);
+        t.payee_outflow_minutes = +lognorm(20, 1.2, 1, 5000).toFixed(1);
+      } else {
+        t.payee_sim_changes_90d = [1, 2, 2, 3, 4][int(0, 4)]; t.payee_sim_age_days = int(1, 29);
+        t.payee_vpa_age_days = Math.round(expo(600) + 30); t.payee_outflow_minutes = +lognorm(25, 1.2, 1, 5000).toFixed(1);
+        t.amount = roundAmt(lognorm(4000, 1.0));
+      }
+      v = phoneVpa();
+    }
+    t.amount = Math.max(1, t.amount);
+    return { features: t, scenario: sc, is_fraud: fraud ? 1 : 0, payee: v.masked + "@" + v.bank };
+  };
+}
+
+var STORY = {
+  features: { amount: 1, hour: 18, payee_sim_reachable: 0, payee_sim_age_days: 400, payee_sim_changes_90d: 0,
+    payee_vpa_age_days: 3, payee_unique_senders_24h: 40, payee_outflow_minutes: 2, first_time_payee: 1, payer_on_call: 0 },
+  scenario: "dead_sim_mule", is_fraud: 1, payee: "98xxxxx321@upi", story: true
+};
+var REPEAT = { amount: 250, hour: 13, payee_sim_reachable: 1, payee_sim_age_days: 1400, payee_sim_changes_90d: 0,
+  payee_vpa_age_days: 900, payee_unique_senders_24h: 1, payee_outflow_minutes: 2000, first_time_payee: 0, payer_on_call: 0 };
+
+if (typeof module !== "undefined") module.exports = { scoreTxn: scoreTxn, reasonCodes: reasonCodes, Gen: Gen, STORY: STORY, REPEAT: REPEAT, rupees: rupees, FEATURES: FEATURES };
+</script>
+
+<!-- ===================== UI ===================== -->
+<script id="ui">
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+
+  // ----- Guilloche rosette, drawn once -----
+  (function rosette() {
+    var svg = $("rosette"), NS = "http://www.w3.org/2000/svg";
+    function curve(R, r, d, scale, steps) {
+      var pts = [], k = (R - r) / r;
+      for (var i = 0; i <= steps; i++) {
+        var th = i / steps * Math.PI * 2 * r / gcd(R, r);
+        var x = (R - r) * Math.cos(th) + d * Math.cos(k * th), y = (R - r) * Math.sin(th) - d * Math.sin(k * th);
+        pts.push((x * scale).toFixed(2) + " " + (y * scale).toFixed(2));
+      }
+      return "M" + pts.join("L");
+    }
+    function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+    [[96, 36, 52, 0.42, 1400, "r1"], [80, 30, 62, 0.40, 1400, "r2"], [60, 25, 16, 0.55, 900, "r3"]].forEach(function (c) {
+      var p = document.createElementNS(NS, "path");
+      p.setAttribute("d", curve(c[0], c[1], c[2], c[3], c[4])); p.setAttribute("class", c[5]);
+      svg.appendChild(p);
+      try { p.style.setProperty("--len", Math.ceil(p.getTotalLength())); } catch (e) {}
+    });
+  })();
+
+  // ----- State -----
+  var gen = new Gen(), feed = $("feed"), rows = [], selected = null, paused = false, seq = 0;
+  var K = { total: 0, block: 0, warn: 0, saved: 0, missed: 0, latSum: 0 };
+  var MAX_ROWS = 80;
+
+  function clock(d) { return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }); }
+  function latText(ms) { if (ms < 0.001) return "under 1 µs"; return ms < 1 ? (ms * 1000).toFixed(1) + " µs" : ms.toFixed(2) + " ms"; }
+
+  function bar(score) {
+    return '<span class="bar"><i style="width:' + score + '%"></i><span class="tick" style="left:40%"></span><span class="tick" style="left:75%"></span></span>';
+  }
+
+  function ingest(item) {
+    var t0 = performance.now(), res = scoreTxn(item.features), lat = performance.now() - t0;
+    item.res = res; item.lat = lat; item.time = new Date(); item.id = "T" + (++seq);
+    K.total++; K.latSum += lat;
+    if (res.decision === "BLOCK") K.block++; else if (res.decision === "WARN") K.warn++;
+    if (item.is_fraud) { if (res.decision === "ALLOW") K.missed++; else K.saved += item.features.amount; }
+    var el = document.createElement("div");
+    el.className = "row new lv-" + res.decision; el.setAttribute("role", "listitem"); el.tabIndex = 0;
+    el.setAttribute("aria-label", rupees(item.features.amount) + " to " + item.payee + ", risk " + res.risk_score + ", " + res.decision);
+    el.innerHTML = '<span class="t">' + clock(item.time) + '</span><span class="amt">' + rupees(item.features.amount) + '</span>' +
+      '<span class="payee"><b>' + esc(item.payee.split("@")[0]) + '</b>@' + esc(item.payee.split("@")[1]) + '</span>' +
+      '<span class="score"><span class="n">' + res.risk_score + '</span>' + bar(res.risk_score) + '</span>' +
+      '<span class="chip ' + res.decision + '">' + res.decision + '</span>';
+    el.addEventListener("click", function () { select(item); });
+    el.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(item); } });
+    item.el = el;
+    var atTop = feed.scrollTop < 8;
+    feed.insertBefore(el, feed.firstChild);
+    if (!atTop) feed.scrollTop += el.offsetHeight;
+    rows.unshift(item);
+    while (rows.length > MAX_ROWS) {
+      var idx = rows.length - 1; if (rows[idx] === selected) idx--;
+      rows.splice(idx, 1)[0].el.remove();
+    }
+    setTimeout(function () { el.classList.remove("new"); }, 700);
+    kpis();
+    return item;
+  }
+
+  function kpis() {
+    $("kTotal").textContent = INR.format(K.total);
+    $("kBlock").textContent = INR.format(K.block);
+    $("kWarn").textContent = INR.format(K.warn);
+    $("kLat").textContent = K.total ? latText(K.latSum / K.total) : "–";
+    $("kSaved").textContent = rupees(K.saved);
+    $("kMissed").textContent = "Fraud that got through: " + INR.format(K.missed);
+  }
+
+  var LABELS = {
+    payee_sim_reachable: ["Payee SIM reachable", function (v) { return v ? "Yes" : "No"; }],
+    payee_sim_age_days: ["Payee SIM age", function (v) { return plural(v, "day"); }],
+    payee_sim_changes_90d: ["SIM changes, 90 days", function (v) { return String(v); }],
+    payee_vpa_age_days: ["Payee UPI ID age", function (v) { return plural(v, "day"); }],
+    payee_unique_senders_24h: ["Different senders, 24h", function (v) { return String(v); }],
+    payee_outflow_minutes: ["Money moved out after", function (v) { return v < 120 ? plural(v, "min") : (v / 60).toFixed(v < 600 ? 1 : 0) + " h"; }],
+    first_time_payee: ["First time paying them", function (v) { return v ? "Yes" : "No"; }],
+    payer_on_call: ["Payer on a call", function (v) { return v ? "Yes" : "No"; }],
+    amount: ["Amount", function (v) { return rupees(v); }],
+    hour: ["Hour of day", function (v) { return (v < 10 ? "0" : "") + v + ":00"; }]
+  };
+  var ORDER = ["payee_sim_reachable", "payee_sim_age_days", "payee_sim_changes_90d", "payee_vpa_age_days", "payee_unique_senders_24h", "payee_outflow_minutes", "first_time_payee", "payer_on_call", "amount", "hour"];
+
+  function resultHTML(f, res, opts) {
+    opts = opts || {};
+    var cmap = {}; res.contributions.forEach(function (c) { cmap[c[0]] = c[1]; });
+    var h = "";
+    if (opts.head) h += opts.head;
+    h += '<div class="gauge lv-' + res.decision + '">' + bar(res.risk_score) +
+      '<div class="marks"><span style="left:40%">40 warn</span><span style="left:75%">75 block</span></div></div>';
+    h += '<div class="d-sub">What the payer is told</div><ul class="reasons">' + res.reasons.map(function (r) {
+      return '<li class="' + (r.none ? "none" : r.minor ? "minor" : "") + '">' + esc(r.text) + "</li>"; }).join("") + "</ul>";
+    if (opts.signals !== false) {
+      h += '<div class="d-sub">Signals and their weight</div><table class="sig"><tbody>' + ORDER.map(function (k) {
+        var c = cmap[k] || 0;
+        return '<tr class="' + (c >= 1 ? "hot" : "") + '"><td>' + LABELS[k][0] + "</td><td>" + LABELS[k][1](f[k]) + "</td><td>" + (c ? "+" + c.toFixed(1) : "–") + "</td></tr>";
+      }).join("") + "</tbody></table>";
+      h += '<p class="d-foot">Score = logistic(' + BIAS.toFixed(1) + " + weights) = " + res.logit.toFixed(2) + " logit.</p>";
+    }
+    return h;
+  }
+
+  function select(item) {
+    if (selected && selected.el) selected.el.classList.remove("sel");
+    selected = item; item.el.classList.add("sel");
+    var f = item.features, res = item.res;
+    var head = '<div class="d-head"><div><div class="d-amt">' + rupees(f.amount) + '</div><div class="d-to">to ' + esc(item.payee) + "</div>" +
+      '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="chip ' + res.decision + '">' + res.decision + "</span>" +
+      '<span class="truth">Simulated as: ' + esc(item.scenario.replace(/_/g, " ")) + "</span></div></div>" +
+      '<div class="d-score lv-' + res.decision + '"><span class="big">' + res.risk_score + '</span><span class="of">of 100</span></div></div>';
+    $("detail").innerHTML = '<h2 class="sr">Payment detail</h2>' + resultHTML(f, res, { head: head }) +
+      '<p class="d-foot">Scored in ' + latText(item.lat) + " at " + clock(item.time) + ".</p>" +
+      '<div class="d-actions"><button class="btn" type="button" id="toWhatIf">Open in What if</button>' +
+      (res.decision !== "ALLOW" ? '<button class="btn" type="button" id="showPhone">Show payer screen</button>' : "") + "</div>";
+    $("toWhatIf").onclick = function () { loadWhatIf(f); $("wiTitle").scrollIntoView({ behavior: "smooth", block: "start" }); };
+    if ($("showPhone")) $("showPhone").onclick = function () { openPhone(item); };
+  }
+
+  // ----- Stream -----
+  var timer = null;
+  function tick() { if (!paused) ingest(gen.next()); }
+  function start() { if (!timer) timer = setInterval(tick, 400); }
+  function setPaused(p) {
+    paused = p;
+    $("pauseBtn").textContent = p ? "Resume stream" : "Pause stream";
+    $("pauseBtn").setAttribute("aria-pressed", String(p));
+    $("live").classList.toggle("paused", p);
+    $("liveText").textContent = p ? "Paused" : "Live: simulated UPI traffic, scored in your browser";
+  }
+  $("pauseBtn").onclick = function () { setPaused(!paused); };
+  for (var i = 0; i < 14; i++) ingest(gen.next());
+  start();
+
+  // ----- ₹1 story + phone screen -----
+  var phone = $("phone"), resumeAfter = false;
+  function openPhone(item) {
+    var f = item.features, res = item.res;
+    var reasons = res.reasons.filter(function (r) { return !r.minor && !r.none; });
+    if (!reasons.length) reasons = res.reasons;
+    $("phScreen").innerHTML =
+      '<div class="notch"></div><div class="statusbar"><span>' + clock(new Date()).slice(0, 5) + "</span><span>5G  86%</span></div>" +
+      '<div class="payhdr">Paying<b>' + rupees(f.amount) + "</b>to " + esc(item.payee) + "</div>" +
+      '<div class="alert"><h3 id="phTitle">⚠️ Hold on — this payee looks risky</h3>' +
+      '<p class="why">PayeeShield checked who you are paying before the money leaves your account.</p><ul>' +
+      reasons.map(function (r) { return "<li>" + esc(r.text) + "</li>"; }).join("") + "</ul>" +
+      '<div class="riskline">Risk ' + res.risk_score + " of 100. " + (res.decision === "BLOCK" ? "Stopped unless you choose to continue." : "Please check before you pay.") + "</div></div>" +
+      '<div class="ph-actions"><button class="ph-cancel" type="button" id="phCancel">Cancel payment</button><button class="ph-pay" type="button" id="phPay">Pay anyway</button></div>';
+    resumeAfter = !paused; setPaused(true);
+    phone.showModal(); $("phCancel").focus();
+    $("phCancel").onclick = function () { done("Payment cancelled", "Your " + rupees(f.amount) + " stays in your account. If someone pressured you to pay, hang up and call the National Cyber Crime Helpline on 1930."); };
+    $("phPay").onclick = function () { done("Payment sent", "If this turns out to be a scam, report it right away on 1930 or cybercrime.gov.in. Reporting within the first hour gives the best chance of freezing the money."); };
+  }
+  function done(title, body) {
+    $("phScreen").innerHTML = '<div class="notch"></div><div class="statusbar"><span>' + clock(new Date()).slice(0, 5) + "</span><span>5G  86%</span></div>" +
+      '<div class="ph-result"><h3 id="phTitle">' + title + "</h3><p>" + body + '</p></div><div class="ph-actions"><button class="ph-cancel" type="button" id="phClose">Back to dashboard</button></div>';
+    $("phClose").focus(); $("phClose").onclick = function () { phone.close(); };
+  }
+  phone.addEventListener("close", function () { if (resumeAfter) setPaused(false); });
+  phone.addEventListener("click", function (e) { if (e.target === phone) phone.close(); });
+
+  $("storyBtn").onclick = function () {
+    var item = ingest(JSON.parse(JSON.stringify(STORY)));
+    feed.scrollTop = 0; select(item); openPhone(item);
+  };
+
+  // ----- What-if -----
+  var SPEC = [
+    ["amount", "Amount (₹)", "number", 1, 500000, 1],
+    ["payee_sim_reachable", "Payee SIM reachable", "toggle"],
+    ["payee_vpa_age_days", "Payee UPI ID age (days)", "range", 0, 1000, 1],
+    ["payee_sim_age_days", "Payee SIM age (days)", "range", 0, 1000, 1],
+    ["payee_sim_changes_90d", "SIM changes in 90 days", "range", 0, 5, 1],
+    ["payee_unique_senders_24h", "Different senders in 24h", "range", 0, 100, 1],
+    ["payee_outflow_minutes", "Money moved out after (min)", "range", 1, 1440, 1],
+    ["hour", "Hour of day", "range", 0, 23, 1],
+    ["first_time_payee", "First time paying them", "toggle"],
+    ["payer_on_call", "Payer is on a call", "toggle"]
+  ];
+  var wi = Object.assign({}, REPEAT);
+  var fields = $("fields");
+  SPEC.forEach(function (s) {
+    var id = "wi_" + s[0], d = document.createElement("div");
+    if (s[2] === "toggle") {
+      d.className = "f toggle";
+      d.innerHTML = '<span class="lab" id="' + id + '_l">' + s[1] + '</span><span class="switch"><input type="checkbox" role="switch" id="' + id + '" aria-labelledby="' + id + '_l"><span></span></span>';
+    } else if (s[2] === "number") {
+      d.className = "f";
+      d.innerHTML = '<label for="' + id + '"><span>' + s[1] + '</span><input type="number" inputmode="numeric" id="' + id + '" min="' + s[3] + '" max="' + s[4] + '" step="' + s[5] + '"></label>';
+    } else {
+      d.className = "f";
+      d.innerHTML = '<label for="' + id + '"><span>' + s[1] + '</span><output id="' + id + '_o"></output></label><input type="range" id="' + id + '" min="' + s[3] + '" max="' + s[4] + '" step="' + s[5] + '">';
+    }
+    fields.appendChild(d);
+    $(id).addEventListener("input", function (e) {
+      var el = e.target, v;
+      if (s[2] === "toggle") v = el.checked ? 1 : 0;
+      else { v = parseFloat(el.value); if (!isFinite(v)) v = s[3]; v = Math.max(s[3], Math.min(s[4], v)); }
+      wi[s[0]] = v; renderWhatIf(false);
+    });
+  });
+  function loadWhatIf(f) { wi = Object.assign({}, f); wi.amount = Math.max(1, Math.round(wi.amount)); renderWhatIf(true); }
+  function renderWhatIf(syncInputs) {
+    SPEC.forEach(function (s) {
+      var el = $("wi_" + s[0]);
+      if (syncInputs) { if (s[2] === "toggle") el.checked = !!wi[s[0]]; else el.value = Math.min(s[4], Math.round(wi[s[0]])); }
+      if (s[2] === "range") $("wi_" + s[0] + "_o").textContent = LABELS[s[0]][1](wi[s[0]]);
+    });
+    var res = scoreTxn(wi);
+    var head = '<div class="d-head"><div><div class="d-amt">' + rupees(wi.amount) + '</div><div class="d-to">Decision</div><span class="chip ' + res.decision + '">' + res.decision + "</span></div>" +
+      '<div class="d-score lv-' + res.decision + '"><span class="big">' + res.risk_score + '</span><span class="of">of 100</span></div></div>';
+    $("wiOut").innerHTML = resultHTML(wi, res, { head: head, signals: false });
+  }
+  var PRESETS = [
+    ["The ₹1 story", STORY.features],
+    ["Regular payee, ₹250", REPEAT],
+    ["Busy tea stall", { amount: 20, hour: 9, payee_sim_reachable: 1, payee_sim_age_days: 1600, payee_sim_changes_90d: 0, payee_vpa_age_days: 700, payee_unique_senders_24h: 85, payee_outflow_minutes: 45, first_time_payee: 1, payer_on_call: 0 }],
+    ["Digital arrest call", { amount: 150000, hour: 11, payee_sim_reachable: 1, payee_sim_age_days: 200, payee_sim_changes_90d: 0, payee_vpa_age_days: 12, payee_unique_senders_24h: 6, payee_outflow_minutes: 30, first_time_payee: 1, payer_on_call: 1 }],
+    ["Swapped SIM", { amount: 4000, hour: 22, payee_sim_reachable: 1, payee_sim_age_days: 4, payee_sim_changes_90d: 3, payee_vpa_age_days: 800, payee_unique_senders_24h: 3, payee_outflow_minutes: 8, first_time_payee: 1, payer_on_call: 0 }]
+  ];
+  PRESETS.forEach(function (p) {
+    var b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = p[0];
+    b.onclick = function () { loadWhatIf(p[1]); }; $("presets").appendChild(b);
+  });
+  renderWhatIf(true);
+})();
+</script>
+</body>
+</html>

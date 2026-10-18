@@ -1,0 +1,23 @@
+{
+  "model_version": "model-6f7c1e97",
+  "transactions": 3000,
+  "wall_seconds": 11.706,
+  "throughput_tps": 256.3,
+  "latency_ms": {
+    "p50": 3.114,
+    "p95": 6.527,
+    "p99": 13.317
+  },
+  "decisions": {
+    "ALLOW": 2765,
+    "WARN": 111,
+    "BLOCK": 124
+  },
+  "fraud": {
+    "total": 92,
+    "caught": 87,
+    "missed": 5,
+    "catch_rate": 0.9457,
+    "false_alarms": 148
+  }
+}

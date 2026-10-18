@@ -1,0 +1,83 @@
+{
+  "roc_auc": 0.9643,
+  "pr_auc": 0.832,
+  "block": {
+    "threshold_risk_score": 75,
+    "precision": 0.5542,
+    "recall": 0.8581,
+    "f1": 0.6734,
+    "flag_rate": 0.048
+  },
+  "warn": {
+    "threshold_risk_score": 40,
+    "precision": 0.3473,
+    "recall": 0.9065,
+    "f1": 0.5022,
+    "flag_rate": 0.0809
+  },
+  "baseline_features": [
+    "amount",
+    "hour",
+    "first_time_payee",
+    "payer_on_call"
+  ],
+  "baseline_roc_auc": 0.8939,
+  "baseline_pr_auc": 0.4816,
+  "recall_by_scenario_at_warn": {
+    "dead_sim_mule": 0.9528,
+    "digital_arrest": 1.0,
+    "fake_refund_qr": 0.8551,
+    "sim_swap_mule": 1.0
+  },
+  "false_alarm_rate_by_legit_segment_at_warn": {
+    "legit_merchant": 0.0759,
+    "legit_new_shop": 0.3424,
+    "legit_p2p": 0.0232
+  },
+  "test_rows": 10000,
+  "fraud_rate": 0.031,
+  "train_seconds": 2.65,
+  "feature_importance": [
+    {
+      "feature": "payee_sim_age_days",
+      "importance": 0.1808
+    },
+    {
+      "feature": "amount",
+      "importance": 0.1626
+    },
+    {
+      "feature": "payee_sim_changes_90d",
+      "importance": 0.1229
+    },
+    {
+      "feature": "payee_sim_reachable",
+      "importance": 0.095
+    },
+    {
+      "feature": "first_time_payee",
+      "importance": 0.0853
+    },
+    {
+      "feature": "payee_outflow_minutes",
+      "importance": 0.0584
+    },
+    {
+      "feature": "payee_vpa_age_days",
+      "importance": 0.0457
+    },
+    {
+      "feature": "payee_unique_senders_24h",
+      "importance": 0.034
+    },
+    {
+      "feature": "hour",
+      "importance": 0.0022
+    },
+    {
+      "feature": "payer_on_call",
+      "importance": 0.0008
+    }
+  ],
+  "predict_latency_ms_single_row": 3.157
+}
