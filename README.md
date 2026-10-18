@@ -145,6 +145,13 @@ Sample response (score and latency vary with the trained model and hardware):
 
 `POST /score/batch` takes a JSON array of the same objects. `GET /health` reports whether the model is loaded.
 
+## Submission files
+
+- Demo video (2 min 18 s): [`submission/PayeeShield_Demo.mp4`](submission/PayeeShield_Demo.mp4)
+- Pitch deck: [`submission/PayeeShield_Pitch_Deck.pdf`](submission/PayeeShield_Pitch_Deck.pdf)
+- Screenshots: [`submission/`](submission/)
+- Live demo: open [`dashboard/index.html`](dashboard/index.html) in any browser (works offline)
+
 ## Results
 
 Model metrics are from a held-out 20% test split (10,000 payments, 3.1% fraud) of the synthetic data. Latency and throughput are from `stream_sim.py` replaying 3,000 fresh payments generated with a different seed, on a standard CPU.
