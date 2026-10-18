@@ -16,7 +16,7 @@ Existing defences mostly watch the **payer** (unusual device, unusual amount) or
 
 ## The ₹1 story
 
-A stranger gave our team lead a phone number to pay. He sent ₹1 on UPI as a test and it **succeeded**. When he called the number, it was **out of service**.
+A scammer gave our class tutor a phone number to pay. Our tutor sent ₹1 on UPI as a test and it **succeeded**. When our tutor called the number, it was **out of service**.
 
 That is possible because UPI checks the SIM only once, at registration (SMS device binding). After that, the number can be dead on the telecom network and the UPI ID keeps receiving money. NPCI delinks only numbers inactive for 12 months or more, and telecoms recycle numbers after 90 days, so scam numbers that are still in use slip through.
 
@@ -189,4 +189,3 @@ The model is a compact tabular classifier on 10 features, the kind of workload t
 ## Team
 
 Team ACHILLES, PSG Institute of Technology and Applied Research (PSG iTech), Coimbatore.
-Lead: Sukumar M.
